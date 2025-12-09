@@ -7,6 +7,7 @@ import me.lucko.fabric.api.permissions.v0.Options;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.PermissionLevel;
 
 public class PermissionNodeHandlerImpl implements PermissionNodeHandler {
 
@@ -14,7 +15,7 @@ public class PermissionNodeHandlerImpl implements PermissionNodeHandler {
     public boolean perm(CommandSourceStack src, String perm, boolean adminCmd) {
         if (Flan.permissionAPI) {
             if (adminCmd)
-                return Permissions.check(src, perm, ConfigHandler.CONFIG.permissionLevel);
+                return Permissions.check(src, perm, PermissionLevel.byId(ConfigHandler.CONFIG.permissionLevel));
             return Permissions.check(src, perm, true);
         }
         return PermissionNodeHandler.super.perm(src, perm, adminCmd);
@@ -24,7 +25,7 @@ public class PermissionNodeHandlerImpl implements PermissionNodeHandler {
     public boolean perm(ServerPlayer src, String perm, boolean adminCmd) {
         if (Flan.permissionAPI) {
             if (adminCmd)
-                return Permissions.check(src, perm, ConfigHandler.CONFIG.permissionLevel);
+                return Permissions.check(src, perm, PermissionLevel.byId(ConfigHandler.CONFIG.permissionLevel));
             return Permissions.check(src, perm, true);
         }
         return PermissionNodeHandler.super.perm(src, perm, adminCmd);

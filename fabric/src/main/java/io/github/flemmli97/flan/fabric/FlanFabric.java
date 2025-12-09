@@ -34,7 +34,7 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
@@ -53,7 +53,7 @@ import java.util.function.Function;
 
 public class FlanFabric implements ModInitializer {
 
-    public static final ResourceLocation EVENT_PHASE = ResourceLocation.fromNamespaceAndPath("flan", "events");
+    public static final Identifier EVENT_PHASE = Identifier.fromNamespaceAndPath("flan", "events");
 
     @Override
     public void onInitialize() {
@@ -73,8 +73,8 @@ public class FlanFabric implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> PlayerEvents.onLogout(handler.player));
         CommandRegistrationCallback.EVENT.register((dispatcher, reg, env) -> CommandClaim.register(dispatcher, reg, env == Commands.CommandSelection.DEDICATED));
 
-        registerListener(PermissionManager.ID.location(), PermissionManager::create);
-        registerListener(InteractionOverrideManager.ID.location(), InteractionOverrideManager::create);
+        registerListener(PermissionManager.ID.identifier(), PermissionManager::create);
+        registerListener(InteractionOverrideManager.ID.identifier(), InteractionOverrideManager::create);
 
         Flan.permissionAPI = FabricLoader.getInstance().isModLoaded("fabric-permissions-api-v0");
         Flan.playerAbilityLib = FabricLoader.getInstance().isModLoaded("playerabilitylib");
@@ -126,7 +126,7 @@ public class FlanFabric implements ModInitializer {
         return InteractionResult.PASS;
     }
 
-    private static void registerListener(ResourceLocation id, Function<HolderLookup.Provider, PreparableReloadListener> factory) {
+    private static void registerListener(Identifier id, Function<HolderLookup.Provider, PreparableReloadListener> factory) {
         ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(id, provider -> new IdentifiableResourceReloadListener() {
             private final PreparableReloadListener listener = factory.apply(provider);
 
@@ -136,7 +136,7 @@ public class FlanFabric implements ModInitializer {
             }
 
             @Override
-            public ResourceLocation getFabricId() {
+            public Identifier getFabricId() {
                 return id;
             }
         });

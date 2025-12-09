@@ -277,7 +277,7 @@ Flan 1.10.0
   This can be used in conjunction with e.g. `itemPermission` config.  
   This is a **breaking change** for mods that depend on flan!!!  
   Notably `PermissionRegistry` has been renamed to `BuiltinPermission`
-  which now contains ids for all default provided permissions. All permission checks now take a simple `ResourceLocation`  
+  which now contains ids for all default provided permissions. All permission checks now take a simple `Identifier`  
   For users/server owners this should not cause problems (hopefully)
 
 Flan 1.9.1

@@ -27,6 +27,7 @@ import io.github.flemmli97.flan.player.PlayerClaimData;
 import io.github.flemmli97.flan.player.display.ClaimDisplayBox;
 import io.github.flemmli97.flan.player.display.DisplayBox;
 import net.minecraft.ChatFormatting;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -38,7 +39,7 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -74,8 +75,8 @@ public class Claim implements IPermissionContainer {
     private UUID claimID;
     private String claimName = "";
     private BlockPos homePos;
-    private final Map<ResourceLocation, Boolean> globalPerm = new HashMap<>();
-    private final Map<String, Map<ResourceLocation, Boolean>> permissions = new HashMap<>();
+    private final Map<Identifier, Boolean> globalPerm = new HashMap<>();
+    private final Map<String, Map<Identifier, Boolean>> permissions = new HashMap<>();
 
     private final Map<UUID, String> playersGroups = new HashMap<>();
 
@@ -312,7 +313,7 @@ public class Claim implements IPermissionContainer {
     }
 
     @Override
-    public boolean canInteract(ServerPlayer player, ResourceLocation perm, BlockPos pos, boolean message) {
+    public boolean canInteract(ServerPlayer player, Identifier perm, BlockPos pos, boolean message) {
         boolean realPlayer = player != null && player.getClass().equals(ServerPlayer.class);
         message = message && realPlayer && player.connection != null; //dont send messages to fake players
         //Delegate interaction to FAKEPLAYER perm if a fake player
@@ -374,7 +375,7 @@ public class Claim implements IPermissionContainer {
                 }
             }
         if (this.playersGroups.containsKey(player.getUUID())) {
-            Map<ResourceLocation, Boolean> map = this.permissions.get(this.playersGroups.get(player.getUUID()));
+            Map<Identifier, Boolean> map = this.permissions.get(this.playersGroups.get(player.getUUID()));
             if (map != null && map.containsKey(perm)) {
                 if (map.get(perm))
                     return true;
@@ -394,7 +395,7 @@ public class Claim implements IPermissionContainer {
         return false;
     }
 
-    private boolean playerBypassesPermission(ServerPlayer player, ResourceLocation perm) {
+    private boolean playerBypassesPermission(ServerPlayer player, Identifier perm) {
         if (player == null)
             return true;
         ClaimPermission permission = PermissionManager.getInstance().get(perm);
@@ -408,17 +409,17 @@ public class Claim implements IPermissionContainer {
             return true;
         if (PlayerClaimData.get(player).isAdminIgnoreClaim())
             return !this.isAdminClaim() || PermissionNodeHandler.INSTANCE.perm(player, PermissionNodeHandler.ADMIN_BYPASS, true);
-        return this.isAdminClaim() && player.hasPermissions(2);
+        return this.isAdminClaim() && Commands.LEVEL_GAMEMASTERS.check(player.permissions());
     }
 
     /**
      * @return -1 for default, 0 for false, 1 for true
      */
-    public int permEnabled(ResourceLocation perm) {
+    public int permEnabled(Identifier perm) {
         return !this.globalPerm.containsKey(perm) ? -1 : this.globalPerm.get(perm) ? 1 : 0;
     }
 
-    private boolean hasPerm(ResourceLocation perm) {
+    private boolean hasPerm(Identifier perm) {
         if (this.parentClaim() == null)
             return this.permEnabled(perm) == 1;
         if (this.permEnabled(perm) == -1)
@@ -547,7 +548,7 @@ public class Claim implements IPermissionContainer {
         return this.fakePlayers.stream().map(UUID::toString).toList();
     }
 
-    public boolean editGlobalPerms(ServerPlayer player, ResourceLocation toggle, int mode) {
+    public boolean editGlobalPerms(ServerPlayer player, Identifier toggle, int mode) {
         if ((player != null && !this.canInteract(player, BuiltinPermission.EDITPERMS, player.blockPosition())) || (!this.isAdminClaim() && ConfigHandler.CONFIG.globallyDefined(this.level, toggle)))
             return false;
         if (mode > 1)
@@ -560,7 +561,7 @@ public class Claim implements IPermissionContainer {
         return true;
     }
 
-    public boolean editPerms(ServerPlayer player, String group, ResourceLocation perm, int mode) {
+    public boolean editPerms(ServerPlayer player, String group, Identifier perm, int mode) {
         return this.editPerms(player, group, perm, mode, false);
     }
 
@@ -570,14 +571,14 @@ public class Claim implements IPermissionContainer {
      * @param mode -1 = makes it resort to the global perm, 0 = deny perm, 1 = allow perm
      * @return If editing was successful or not
      */
-    public boolean editPerms(ServerPlayer player, String group, ResourceLocation perm, int mode, boolean alwaysCan) {
+    public boolean editPerms(ServerPlayer player, String group, Identifier perm, int mode, boolean alwaysCan) {
         if (PermissionManager.getInstance().isGlobalPermission(perm) || (!this.isAdminClaim() && ConfigHandler.CONFIG.globallyDefined(this.level, perm)))
             return false;
         if (alwaysCan || this.canInteract(player, BuiltinPermission.EDITPERMS, player.blockPosition())) {
             if (mode > 1)
                 mode = -1;
             boolean has = this.permissions.containsKey(group);
-            Map<ResourceLocation, Boolean> perms = has ? this.permissions.get(group) : new HashMap<>();
+            Map<Identifier, Boolean> perms = has ? this.permissions.get(group) : new HashMap<>();
             if (mode == -1)
                 perms.remove(perm);
             else
@@ -605,7 +606,7 @@ public class Claim implements IPermissionContainer {
         return false;
     }
 
-    public int groupHasPerm(String rank, ResourceLocation perm) {
+    public int groupHasPerm(String rank, Identifier perm) {
         if (!this.permissions.containsKey(rank) || !this.permissions.get(rank).containsKey(perm))
             return -1;
         return this.permissions.get(rank).get(perm) ? 1 : 0;
@@ -760,7 +761,7 @@ public class Claim implements IPermissionContainer {
             this.leaveSubtitle = this.readComponent(obj, "LeaveSubtitle", ops);
             JsonObject potion = ConfigHandler.fromJson(obj, "Potions");
             potion.entrySet().forEach(e ->
-                    BuiltInRegistries.MOB_EFFECT.get(ResourceLocation.parse(e.getKey()))
+                    BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(e.getKey()))
                             .ifPresent(effect -> {
                                 if (e.getValue().isJsonObject()) {
                                     JsonObject potionObj = e.getValue().getAsJsonObject();
@@ -804,7 +805,7 @@ public class Claim implements IPermissionContainer {
                 }
             }
             ConfigHandler.fromJson(obj, "PermGroup").entrySet().forEach(key -> {
-                Map<ResourceLocation, Boolean> map = new HashMap<>();
+                Map<Identifier, Boolean> map = new HashMap<>();
                 JsonObject group = key.getValue().getAsJsonObject();
                 group.entrySet().forEach(gkey ->
                         map.put(BuiltinPermission.tryLegacy(gkey.getKey()), gkey.getValue().getAsBoolean()));
@@ -982,7 +983,7 @@ public class Claim implements IPermissionContainer {
                             })
                     );
                 }
-                for (Map.Entry<String, Map<ResourceLocation, Boolean>> e : this.permissions.entrySet()) {
+                for (Map.Entry<String, Map<Identifier, Boolean>> e : this.permissions.entrySet()) {
                     l.add(ClaimUtils.translatedText(String.format("  %s:", e.getKey()), ChatFormatting.YELLOW));
                     l.add(fromPermissionMap("flan.claimGroupPerms", e.getValue()));
                     l.add(ClaimUtils.translatedText("flan.claimGroupPlayers", nameToGroup.getOrDefault(e.getKey(), new ArrayList<>()), ChatFormatting.RED));
@@ -993,10 +994,10 @@ public class Claim implements IPermissionContainer {
         return l;
     }
 
-    private static Component fromPermissionMap(String lang, Map<ResourceLocation, Boolean> map) {
+    private static Component fromPermissionMap(String lang, Map<Identifier, Boolean> map) {
         MutableComponent mapComp = Component.literal("[").withStyle(ChatFormatting.GRAY);
         int i = 0;
-        for (Map.Entry<ResourceLocation, Boolean> entry : map.entrySet()) {
+        for (Map.Entry<Identifier, Boolean> entry : map.entrySet()) {
             MutableComponent pComp = Component.literal((i != 0 ? ", " : "") + entry.getKey() + "=").withStyle(ChatFormatting.GRAY);
             pComp.append(Component.literal(entry.getValue().toString()).withStyle(entry.getValue() ? ChatFormatting.GREEN : ChatFormatting.RED));
             mapComp.append(pComp);
@@ -1021,11 +1022,11 @@ public class Claim implements IPermissionContainer {
 
         Map<Integer, ClaimUpdater> UPDATER = Config.createHashMap(map -> {
             map.put(7, claim -> {
-                Map<ResourceLocation, Boolean> coowner = claim.permissions.get("Co-Owner");
+                Map<Identifier, Boolean> coowner = claim.permissions.get("Co-Owner");
                 if (coowner != null && coowner.isEmpty()) {
                     coowner.putAll(ConfigHandler.CONFIG.defaultGroups.getOrDefault("Co-Owner", new HashMap<>()));
                 }
-                Map<ResourceLocation, Boolean> visitors = claim.permissions.get("Visitor");
+                Map<Identifier, Boolean> visitors = claim.permissions.get("Visitor");
                 if (visitors != null && visitors.isEmpty()) {
                     visitors.putAll(ConfigHandler.CONFIG.defaultGroups.getOrDefault("Visitor", new HashMap<>()));
                 }

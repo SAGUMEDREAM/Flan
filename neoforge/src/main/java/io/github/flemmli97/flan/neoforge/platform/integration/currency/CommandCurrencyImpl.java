@@ -25,18 +25,19 @@ public class CommandCurrencyImpl implements CommandCurrency {
         int common = CommonCurrency.sell(player, blocks, value, message);
         if (common != -1)
             return common == 1;
-        if (Flan.diceMCMoneySign) {
-            PlayerClaimData data = PlayerClaimData.get(player);
-            if (data.getAdditionalClaims() - Math.max(0, data.usedClaimBlocks() - data.getClaimBlocks()) < blocks) {
-                message.accept(ClaimUtils.translatedText("flan.sellFail", ChatFormatting.DARK_RED));
-                return false;
-            }
-            double price = blocks * value;
-            MoneyWSD.get().changeBalance(MoneyMod.AcctTypes.PLAYER.key, player.getUUID(), price);
-            data.setAdditionalClaims(data.getAdditionalClaims() - blocks);
-            message.accept(ClaimUtils.translatedText("flan.sellSuccess", blocks, price, ChatFormatting.GOLD));
-            return true;
-        }
+//        TODO: Temporarily commented out due to compiler errors from within dicemc.
+//        if (Flan.diceMCMoneySign) {
+//            PlayerClaimData data = PlayerClaimData.get(player);
+//            if (data.getAdditionalClaims() - Math.max(0, data.usedClaimBlocks() - data.getClaimBlocks()) < blocks) {
+//                message.accept(ClaimUtils.translatedText("flan.sellFail", ChatFormatting.DARK_RED));
+//                return false;
+//            }
+//            double price = blocks * value;
+//            MoneyWSD.get().changeBalance(MoneyMod.AcctTypes.PLAYER.key, player.getUUID(), price);
+//            data.setAdditionalClaims(data.getAdditionalClaims() - blocks);
+//            message.accept(ClaimUtils.translatedText("flan.sellSuccess", blocks, price, ChatFormatting.GOLD));
+//            return true;
+//        }
         message.accept(ClaimUtils.translatedText("flan.currencyMissing", ChatFormatting.DARK_RED));
         return false;
     }
@@ -50,21 +51,22 @@ public class CommandCurrencyImpl implements CommandCurrency {
         int common = CommonCurrency.buy(player, blocks, value, message);
         if (common != -1)
             return common == 1;
-        if (Flan.diceMCMoneySign) {
-            UUID uuid = player.getUUID();
-            MoneyWSD manager = MoneyWSD.get();
-            double bal = manager.getBalance(MoneyMod.AcctTypes.PLAYER.key, uuid);
-            double price = blocks * value;
-            if (bal >= price) {
-                PlayerClaimData data = PlayerClaimData.get(player);
-                data.setAdditionalClaims(data.getAdditionalClaims() + blocks);
-                manager.changeBalance(MoneyMod.AcctTypes.PLAYER.key, uuid, -price);
-                message.accept(ClaimUtils.translatedText("flan.buySuccess", blocks, price, ChatFormatting.GOLD));
-                return true;
-            }
-            message.accept(ClaimUtils.translatedText("flan.buyFail", ChatFormatting.DARK_RED));
-            return false;
-        }
+//        TODO: Temporarily commented out due to compiler errors from within dicemc.
+//        if (Flan.diceMCMoneySign) {
+//            UUID uuid = player.getUUID();
+//            MoneyWSD manager = MoneyWSD.get();
+//            double bal = manager.getBalance(MoneyMod.AcctTypes.PLAYER.key, uuid);
+//            double price = blocks * value;
+//            if (bal >= price) {
+//                PlayerClaimData data = PlayerClaimData.get(player);
+//                data.setAdditionalClaims(data.getAdditionalClaims() + blocks);
+//                manager.changeBalance(MoneyMod.AcctTypes.PLAYER.key, uuid, -price);
+//                message.accept(ClaimUtils.translatedText("flan.buySuccess", blocks, price, ChatFormatting.GOLD));
+//                return true;
+//            }
+//            message.accept(ClaimUtils.translatedText("flan.buyFail", ChatFormatting.DARK_RED));
+//            return false;
+//        }
         message.accept(ClaimUtils.translatedText("flan.currencyMissing", ChatFormatting.DARK_RED));
         return false;
     }

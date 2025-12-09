@@ -5,6 +5,8 @@ import io.github.flemmli97.flan.Flan;
 import io.github.flemmli97.flan.config.ConfigHandler;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 
 public interface PermissionNodeHandler {
 
@@ -64,15 +66,17 @@ public interface PermissionNodeHandler {
     }
 
     default boolean perm(CommandSourceStack src, String perm, boolean adminCmd) {
+        Permission.HasCommandLevel adminPermission = new Permission.HasCommandLevel(PermissionLevel.byId(ConfigHandler.CONFIG.permissionLevel));
         if (!Flan.ftbRanks || !(src.getEntity() instanceof ServerPlayer player))
-            return !adminCmd || src.hasPermission(ConfigHandler.CONFIG.permissionLevel);
-        return FTBRanksAPI.getPermissionValue(player, perm).asBoolean().orElse(!adminCmd || player.hasPermissions(ConfigHandler.CONFIG.permissionLevel));
+            return !adminCmd || src.permissions().hasPermission(adminPermission);
+        return FTBRanksAPI.getPermissionValue(player, perm).asBoolean().orElse(!adminCmd || player.permissions().hasPermission(adminPermission));
     }
 
     default boolean perm(ServerPlayer src, String perm, boolean adminCmd) {
+        Permission.HasCommandLevel adminPermission = new Permission.HasCommandLevel(PermissionLevel.byId(ConfigHandler.CONFIG.permissionLevel));
         if (!Flan.ftbRanks)
-            return !adminCmd || src.hasPermissions(ConfigHandler.CONFIG.permissionLevel);
-        return FTBRanksAPI.getPermissionValue(src, perm).asBoolean().orElse(!adminCmd || src.hasPermissions(ConfigHandler.CONFIG.permissionLevel));
+            return !adminCmd || src.permissions().hasPermission(adminPermission);
+        return FTBRanksAPI.getPermissionValue(src, perm).asBoolean().orElse(!adminCmd || src.permissions().hasPermission(adminPermission));
     }
 
     default boolean permBelowEqVal(ServerPlayer src, String perm, int val, int fallback) {
