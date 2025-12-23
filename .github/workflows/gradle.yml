@@ -9,9 +9,9 @@ name: Java CI with Gradle
 
 on:
   push:
-    分支: [ "1.21.10" ]
+    分支: [ "1.21.7" ]
   pull_request:
-    分支: [ "1.21.10" ]
+    分支: [ "1.21.7" ]
 
 jobs:
   build:
